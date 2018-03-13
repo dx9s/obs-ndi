@@ -142,7 +142,7 @@ obs_properties_t* ndi_source_getproperties(void* data) {
         #if defined(_WIN32)
             ShellExecute(NULL, "open", "http://ndi.newtek.com", NULL, NULL, SW_SHOWNORMAL);
         #elif defined(__linux__) || defined(__APPLE__)
-            system("open http://ndi.newtek.com");
+            int opennewtekresult = system("open http://ndi.newtek.com");
         #endif
 
         return true;
@@ -328,52 +328,57 @@ void ndi_source_update(void* data, obs_data_t* settings) {
         }
     }
 
-    NDIlib_recv_create_t recv_desc;
-    recv_desc.source_to_connect_to.p_ndi_name =
-        obs_data_get_string(settings, PROP_SOURCE);
-    recv_desc.allow_video_fields = true;
-    recv_desc.color_format = NDIlib_recv_color_format_UYVY_BGRA;
+    if (strlen(obs_data_get_string(settings, PROP_SOURCE))) {
+      NDIlib_recv_create_t recv_desc;
+      recv_desc.source_to_connect_to.p_ndi_name =
+          obs_data_get_string(settings, PROP_SOURCE);
+      recv_desc.allow_video_fields = true;
+      recv_desc.color_format = NDIlib_recv_color_format_UYVY_BGRA;
 
-    switch (obs_data_get_int(settings, PROP_BANDWIDTH)) {
-        case PROP_BW_HIGHEST:
-            recv_desc.bandwidth = NDIlib_recv_bandwidth_highest;
-            break;
-        case PROP_BW_LOWEST:
-            recv_desc.bandwidth = NDIlib_recv_bandwidth_lowest;
-            break;
-        case PROP_BW_AUDIO_ONLY:
-            recv_desc.bandwidth = NDIlib_recv_bandwidth_audio_only;
-            break;
-    }
+      switch (obs_data_get_int(settings, PROP_BANDWIDTH)) {
+          case PROP_BW_HIGHEST:
+              recv_desc.bandwidth = NDIlib_recv_bandwidth_highest;
+              break;
+          case PROP_BW_LOWEST:
+              recv_desc.bandwidth = NDIlib_recv_bandwidth_lowest;
+              break;
+          case PROP_BW_AUDIO_ONLY:
+              recv_desc.bandwidth = NDIlib_recv_bandwidth_audio_only;
+              break;
+      }
 
-    s->sync_mode = (int)obs_data_get_int(settings, PROP_SYNC);
-    s->ndi_receiver = ndiLib->NDIlib_recv_create_v2(&recv_desc);
-    if (s->ndi_receiver) {
-        if (hwAccelEnabled) {
-            NDIlib_metadata_frame_t hwAccelMetadata;
-            hwAccelMetadata.p_data = "<ndi_hwaccel enabled=\"true\"/>";
-            ndiLib->NDIlib_recv_send_metadata(
-                s->ndi_receiver, &hwAccelMetadata);
-        }
+      s->sync_mode = (int)obs_data_get_int(settings, PROP_SYNC);
+      s->ndi_receiver = ndiLib->NDIlib_recv_create_v2(&recv_desc);
+      if (s->ndi_receiver) {
+          if (hwAccelEnabled) {
+              NDIlib_metadata_frame_t hwAccelMetadata;
+              hwAccelMetadata.p_data = (char*)"<ndi_hwaccel enabled=\"true\"/>";
+              ndiLib->NDIlib_recv_send_metadata(
+                  s->ndi_receiver, &hwAccelMetadata);
+          }
 
-        // Important for low latency receiving
-        obs_source_set_async_unbuffered(s->source, true);
+          // Important for low latency receiving
+          obs_source_set_async_unbuffered(s->source, true);
 
-        s->running = true;
-        pthread_create(&s->video_thread, nullptr, ndi_source_poll_video, data);
-        pthread_create(&s->audio_thread, nullptr, ndi_source_poll_audio, data);
+          s->running = true;
+          pthread_create(&s->video_thread, nullptr, ndi_source_poll_video, data);
+          pthread_create(&s->audio_thread, nullptr, ndi_source_poll_audio, data);
 
-        blog(LOG_INFO, "started A/V threads for source '%s'",
-            recv_desc.source_to_connect_to.p_ndi_name);
+          blog(LOG_INFO, "started A/V threads for source '%s'",
+              recv_desc.source_to_connect_to.p_ndi_name);
 
-        // Update tally status
-        s->tally.on_preview = obs_source_showing(s->source);
-        s->tally.on_program = obs_source_active(s->source);
-        ndiLib->NDIlib_recv_set_tally(s->ndi_receiver, &s->tally);
+          // Update tally status
+          s->tally.on_preview = obs_source_showing(s->source);
+          s->tally.on_program = obs_source_active(s->source);
+          ndiLib->NDIlib_recv_set_tally(s->ndi_receiver, &s->tally);
+      } else {
+          blog(LOG_ERROR,
+              "can't create a receiver for NDI source '%s'",
+              recv_desc.source_to_connect_to.p_ndi_name);
+      }
     } else {
-        blog(LOG_ERROR,
-            "can't create a receiver for NDI source '%s'",
-            recv_desc.source_to_connect_to.p_ndi_name);
+      blog(LOG_ERROR,
+          "refuse to create NDI receiver for empty NDI source name");
     }
 }
 
