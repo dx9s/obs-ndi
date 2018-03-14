@@ -304,7 +304,7 @@ void* ndi_source_thread(void* data) {
 
   NDIlib_metadata_frame_t metadata_frame;
 
-  blog(LOG_INFO, "started A/V threads for source '%s'", recv_desc.source_to_connect_to.p_ndi_name);
+  blog(LOG_INFO, "started A/V thread for source '%s'", recv_desc.source_to_connect_to.p_ndi_name);
 
   while (ns->running) {
     frame_received = ndiLib->NDIlib_recv_capture_v2(ns->ndi_receiver, &video_frame, &audio_frame, &metadata_frame, 1000);
@@ -357,7 +357,7 @@ void* ndi_source_thread(void* data) {
 
   // TODO: is there anything else to cleanup that needs to happen here?
 
-  blog(LOG_INFO, "video thread for '%s' completed", obs_source_get_name(ns->source));
+  blog(LOG_INFO, "A/V thread for '%s' completed", obs_source_get_name(ns->source));
 }
 
 void ndi_source_update(void* data, obs_data_t* settings) {
