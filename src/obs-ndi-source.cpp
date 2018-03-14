@@ -154,6 +154,8 @@ obs_properties_t* ndi_source_getproperties(void* data) {
 void* ndi_source_poll_audio(void* data) {
     struct ndi_source* s = static_cast<ndi_source*>(data);
 
+    int alive = 1000;
+
     blog(LOG_INFO, "audio thread for '%s' started",
                         obs_source_get_name(s->source));
 
@@ -162,6 +164,11 @@ void* ndi_source_poll_audio(void* data) {
 
     NDIlib_frame_type_e frame_received = NDIlib_frame_type_none;
     while (s->running) {
+        if (alive==0) {
+          alive=10000; // (assuming polled every ms, 10 seconds)
+          blog(LOG_INFO, "audio thread alive");
+        }
+        alive--;
         frame_received = ndiLib->NDIlib_recv_capture_v2(
             s->ndi_receiver, nullptr, &audio_frame, nullptr, 1);
 
@@ -233,6 +240,8 @@ void* ndi_source_poll_audio(void* data) {
 void* ndi_source_poll_video(void* data) {
     struct ndi_source* s = static_cast<ndi_source*>(data);
 
+    uint alive = 1000;
+
     blog(LOG_INFO, "video thread for '%s' started",
                     obs_source_get_name(s->source));
 
@@ -241,6 +250,11 @@ void* ndi_source_poll_video(void* data) {
 
     NDIlib_frame_type_e frame_received = NDIlib_frame_type_none;
     while (s->running) {
+        if (alive==0) {
+          alive=10000; // polled every ~1ms = 10sec
+          blog(LOG_INFO, "video thread alive");
+        }
+        alive--;
         frame_received = ndiLib->NDIlib_recv_capture_v2(s->ndi_receiver,
             &video_frame, nullptr, nullptr, 1);
 
