@@ -311,43 +311,49 @@ void* ndi_source_thread(void* data) {
     switch (frame_received) {
       // No data
       case NDIlib_frame_type_none:
-        //TODO: make this a configurable logging someplace
+#if defined(OBS_NDI_THREAD_DEBUG)
         blog(LOG_INFO, "No data received.");
+#endif
         break;
 
       // Video data
       case NDIlib_frame_type_video:
-        //TODO: make this a configurable logging someplace
+#if OBS_NDI_THREAD_DEBUG >= 1
         blog(LOG_INFO, "Video data received (%dx%d).", video_frame.xres, video_frame.yres);
+#endif
         ndi_source_thread_process_video(&video_frame, &obs_video_frame, ns->source, ns->sync_mode);
         ndiLib->NDIlib_recv_free_video_v2(ns->ndi_receiver, &video_frame);
         break;
 
       // Audio data
       case NDIlib_frame_type_audio:
-        //TODO: make this a configurable logging someplace
+#if OBS_NDI_THREAD_DEBUG >= 1
         blog(LOG_INFO, "Audio data received (%d samples).", audio_frame.no_samples);
-        //ndi_source_thread_process_audio(&audo_frame, &obs_audio_frame, ns->source, ns->sync_mode);
+#endif
+        ndi_source_thread_process_audio(&audio_frame, &obs_audio_frame, ns->source, ns->sync_mode);
         ndiLib->NDIlib_recv_free_audio_v2(ns->ndi_receiver, &audio_frame);
         break;
 
       // Meta data
       case NDIlib_frame_type_metadata:
-        //TODO: make this a configurable logging someplace
+#if defined(OBS_NDI_THREAD_DEBUG)
         blog(LOG_INFO, "Meta data received.");
+#endif
         ndiLib->NDIlib_recv_free_metadata(ns->ndi_receiver, &metadata_frame);
         break;
 
       // There is a status change on the receiver
       case NDIlib_frame_type_status_change:
-        //TODO: make this a configurable logging someplace
+#if defined(OBS_NDI_THREAD_DEBUG)
         blog(LOG_INFO, "Receiver connection status changed.");
+#endif
         break;
 
       // Everything else
       default:
-        //TODO: make this a configurable logging someplace
+#if defined(OBS_NDI_THREAD_DEBUG)
         blog(LOG_INFO, "NDIlib_recv_capture_v2 unknown frame type received. ");
+#endif
         break;
     }
   } // end of while running
