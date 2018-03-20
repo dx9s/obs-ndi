@@ -87,7 +87,7 @@ const char* ndi_source_getname(void* data) {
 }
 
 obs_properties_t* ndi_source_getproperties(void* data) {
-  struct ndi_source* s = static_cast<ndi_source*>(data);
+  struct ndi_source* s = (ndi_source*)(data);
 
   obs_properties_t* props = obs_properties_create();
   obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
@@ -248,7 +248,7 @@ void* ndi_source_thread_process_audio(NDIlib_audio_frame_v2_t* audio_frame, obs_
 }
 
 void* ndi_source_thread(void* data) {
-  struct ndi_source* ns = static_cast<ndi_source*>(data);
+  struct ndi_source* ns = (ndi_source*)(data);
 
   NDIlib_recv_create_t recv_desc;
   recv_desc.source_to_connect_to.p_ndi_name = obs_data_get_string(ns->settings, PROP_SOURCE); // assumed not empty
@@ -367,7 +367,7 @@ void* ndi_source_thread(void* data) {
 }
 
 void ndi_source_update(void* data, obs_data_t* settings) {
-  struct ndi_source* ns = static_cast<ndi_source*>(data);
+  struct ndi_source* ns = (ndi_source*)(data);
 
   if(ns->running) {
     ns->running = false;
@@ -386,7 +386,7 @@ void ndi_source_update(void* data, obs_data_t* settings) {
 }
 
 void ndi_source_shown(void* data) {
-  struct ndi_source* s = static_cast<ndi_source*>(data);
+  struct ndi_source* s = (ndi_source*)(data);
 
   // TODO: revisit
   if (s->ndi_receiver) {
@@ -396,7 +396,7 @@ void ndi_source_shown(void* data) {
 }
 
 void ndi_source_hidden(void* data) {
-  struct ndi_source* s = static_cast<ndi_source*>(data);
+  struct ndi_source* s = (ndi_source*)(data);
 
   // TODO: revisit
   if (s->ndi_receiver) {
@@ -406,7 +406,7 @@ void ndi_source_hidden(void* data) {
 }
 
 void ndi_source_activated(void* data) {
-  struct ndi_source* s = static_cast<ndi_source*>(data);
+  struct ndi_source* s = (ndi_source*)(data);
 
   // TODO: revisit
   if (s->ndi_receiver) {
@@ -416,7 +416,7 @@ void ndi_source_activated(void* data) {
 }
 
 void ndi_source_deactivated(void* data) {
-  struct ndi_source* s = static_cast<ndi_source*>(data);
+  struct ndi_source* s = (ndi_source*)(data);
 
   // TODO: revisit
   if (s->ndi_receiver) {
@@ -427,7 +427,7 @@ void ndi_source_deactivated(void* data) {
 
 void* ndi_source_create(obs_data_t* settings, obs_source_t* source) {
   // create the ndi_source instance
-  struct ndi_source* s = static_cast<ndi_source*>(bzalloc(sizeof(struct ndi_source)));
+  struct ndi_source* s = (ndi_source*)(bzalloc(sizeof(struct ndi_source)));
   s->source = source;
   s->running = false;
   s->sync_mode = PROP_SYNC_INTERNAL;
@@ -436,7 +436,7 @@ void* ndi_source_create(obs_data_t* settings, obs_source_t* source) {
 }
 
 void ndi_source_destroy(void* data) {
-  struct ndi_source* s = static_cast<ndi_source*>(data);
+  struct ndi_source* s = (ndi_source*)(data);
   s->running = false;
   pthread_join(s->single_thread, NULL);
 }
